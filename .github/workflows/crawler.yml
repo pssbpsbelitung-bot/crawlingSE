@@ -1,5 +1,8 @@
 name: Run Crawler
 
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: "0 */6 * * *"
@@ -22,10 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install snscrape
-          pip install feedparser
-          pip install requests
-          pip install beautifulsoup4
+          pip install -r requirements.txt
 
       - name: Run crawler
         run: python crawler.py
