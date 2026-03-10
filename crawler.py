@@ -1,200 +1,144 @@
-import requests
-import feedparser
-from bs4 import BeautifulSoup
-import json
+<!DOCTYPE html>
+<html>
+<head>
 
-data=[]
+<meta charset="UTF-8">
+<title>Digital Economy Monitor Belitung</title>
 
-headers={
-"User-Agent":"Mozilla/5.0"
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#eef2f7;
+padding:30px;
 }
 
-# =========================
-# GOOGLE NEWS
-# =========================
+h1{
+margin-bottom:20px;
+}
 
-def google_news():
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+text-align:center;
+}
 
-    url="https://news.google.com/rss/search?q=Belitung+UMKM+digital"
+/* ukuran grafik diperkecil */
+.chart-container{
+width:200px;
+height:200px;
+margin:auto;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
 
-    feed=feedparser.parse(url)
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+text-align:left;
+}
 
-    for item in feed.entries[:20]:
+th{
+background:#2c7be5;
+color:white;
+}
 
-        data.append({
-            "source":"Google News",
-            "title":item.title,
-            "link":item.link
-        })
+a{
+color:#2c7be5;
+text-decoration:none;
+}
 
+a:hover{
+text-decoration:underline;
+}
 
-# =========================
-# YOUTUBE
-# =========================
+</style>
 
-def youtube():
+</head>
 
-    url="https://www.youtube.com/feeds/videos.xml?search_query=Belitung+UMKM+digital"
+<body>
 
-    feed=feedparser.parse(url)
+<h1>Monitoring Ekonomi Digital Belitung</h1>
 
-    for item in feed.entries[:10]:
+<div class="card">
 
-        data.append({
-            "source":"YouTube",
-            "title":item.title,
-            "link":item.link
-        })
+<div class="chart-container">
+<canvas id="chart"></canvas>
+</div>
 
+</div>
 
-# =========================
-# X / TWITTER
-# =========================
+<div class="card">
 
-def twitter():
+<table>
 
-    url="https://nitter.net/search/rss?f=tweets&q=Belitung+UMKM+digital"
+<thead>
+<tr>
+<th>No</th>
+<th>Sumber</th>
+<th>Konten</th>
+<th>Link</th>
+</tr>
+</thead>
 
-    feed=feedparser.parse(url)
+<tbody id="tabel"></tbody>
 
-    for item in feed.entries[:20]:
+</table>
 
-        data.append({
-            "source":"X",
-            "title":item.title,
-            "link":item.link
-        })
+</div>
 
+<script>
 
-# =========================
-# REDDIT
-# =========================
+fetch("data.json")
+.then(r=>r.json())
+.then(data=>{
 
-def reddit():
+let tbody=document.getElementById("tabel")
 
-    url="https://www.reddit.com/search.rss?q=Belitung+UMKM"
+data.forEach((d,i)=>{
 
-    feed=feedparser.parse(url)
+tbody.innerHTML+=`
+<tr>
+<td>${i+1}</td>
+<td>${d.source}</td>
+<td>${d.title}</td>
+<td><a href="${d.link}" target="_blank">Buka</a></td>
+</tr>
+`
 
-    for item in feed.entries[:20]:
+})
 
-        data.append({
-            "source":"Reddit",
-            "title":item.title,
-            "link":item.link
-        })
-
-
-# =========================
-# TIKTOK SCRAPER
-# =========================
-
-def tiktok():
-
-    url="https://www.tiktok.com/search?q=belitung%20umkm"
-
-    r=requests.get(url,headers=headers)
-
-    soup=BeautifulSoup(r.text,"html.parser")
-
-    links=soup.find_all("a")
-
-    for l in links[:20]:
-
-        href=l.get("href")
-
-        if href and "/video/" in href:
-
-            data.append({
-                "source":"TikTok",
-                "title":"TikTok Video",
-                "link":"https://www.tiktok.com"+href
-            })
-
-
-# =========================
-# INSTAGRAM HASHTAG
-# =========================
-
-def instagram():
-
-    url="https://www.instagram.com/explore/tags/belitung/"
-
-    r=requests.get(url,headers=headers)
-
-    soup=BeautifulSoup(r.text,"html.parser")
-
-    links=soup.find_all("a")
-
-    for l in links[:20]:
-
-        href=l.get("href")
-
-        if href and "/p/" in href:
-
-            data.append({
-                "source":"Instagram",
-                "title":"Instagram Post",
-                "link":"https://www.instagram.com"+href
-            })
-
-
-# =========================
-# PORTAL BERITA BABEL
-# =========================
-
-def berita_babel():
-
-    sites=[
-        "https://babelpos.disway.id",
-        "https://bangkapos.com",
-        "https://wowbabel.com"
-    ]
-
-    for site in sites:
-
-        try:
-
-            r=requests.get(site,headers=headers,timeout=10)
-
-            soup=BeautifulSoup(r.text,"html.parser")
-
-            links=soup.find_all("a")
-
-            for l in links[:30]:
-
-                text=l.get_text().lower()
-
-                if "belitung" in text or "umkm" in text or "digital" in text:
-
-                    data.append({
-                        "source":site,
-                        "title":l.get_text().strip(),
-                        "link":l.get("href")
-                    })
-
-        except:
-            pass
-
-
-# =========================
-# RUN ALL CRAWLER
-# =========================
-
-google_news()
-youtube()
-twitter()
-reddit()
-tiktok()
-instagram()
-berita_babel()
-
-
-# =========================
-# SAVE
-# =========================
-
-with open("data.json","w",encoding="utf-8") as f:
-    json.dump(data,f,indent=2,ensure_ascii=False)
-
-print("Crawler selesai. Total data:",len(data))
+let count={}
+
+data.forEach(d=>{
+count[d.source]=(count[d.source]||0)+1
+})
+
+new Chart(document.getElementById("chart"),{
+type:"pie",
+data:{
+labels:Object.keys(count),
+datasets:[{
+data:Object.values(count)
+}]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false
+}
+})
+
+})
+
+</script>
+
+</body>
+</html>
