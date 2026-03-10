@@ -1,119 +1,39 @@
-import requests
-import feedparser
-from bs4 import BeautifulSoup
-import json
+name: Run Crawler
 
-data=[]
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
 
-# =========================
-# GOOGLE NEWS
-# =========================
+jobs:
+  crawl:
 
-def google_news():
+    runs-on: ubuntu-latest
 
-    url="https://news.google.com/rss/search?q=Belitung+ekonomi+digital+UMKM"
+    steps:
 
-    feed=feedparser.parse(url)
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    for item in feed.entries[:20]:
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
 
-        data.append({
-            "source":"Google News",
-            "title":item.title,
-            "link":item.link
-        })
+      - name: Install dependencies
+        run: |
+          pip install snscrape
+          pip install feedparser
+          pip install requests
+          pip install beautifulsoup4
 
+      - name: Run crawler
+        run: python crawler.py
 
-# =========================
-# YOUTUBE
-# =========================
-
-def youtube():
-
-    url="https://www.youtube.com/feeds/videos.xml?search_query=Belitung+UMKM+digital"
-
-    feed=feedparser.parse(url)
-
-    for item in feed.entries[:10]:
-
-        data.append({
-            "source":"YouTube",
-            "title":item.title,
-            "link":item.link
-        })
-
-
-# =========================
-# X / TWITTER (NITTER RSS)
-# =========================
-
-def twitter():
-
-    url="https://nitter.net/search/rss?f=tweets&q=Belitung+UMKM+digital"
-
-    feed=feedparser.parse(url)
-
-    for item in feed.entries[:20]:
-
-        data.append({
-            "source":"X",
-            "title":item.title,
-            "link":item.link
-        })
-
-
-# =========================
-# PORTAL BERITA BABEL
-# =========================
-
-def berita_babel():
-
-    sites=[
-        "https://babelpos.disway.id",
-        "https://bangkapos.com",
-        "https://wowbabel.com"
-    ]
-
-    for site in sites:
-
-        try:
-
-            r=requests.get(site,timeout=10)
-
-            soup=BeautifulSoup(r.text,"html.parser")
-
-            links=soup.find_all("a")
-
-            for l in links[:20]:
-
-                text=l.get_text().lower()
-
-                if "belitung" in text or "umkm" in text or "digital" in text:
-
-                    data.append({
-                        "source":site,
-                        "title":l.get_text().strip(),
-                        "link":l.get("href")
-                    })
-
-        except:
-            pass
-
-
-# =========================
-# JALANKAN SEMUA SCRAPER
-# =========================
-
-google_news()
-youtube()
-twitter()
-berita_babel()
-
-# =========================
-# SIMPAN DATA
-# =========================
-
-with open("data.json","w") as f:
-    json.dump(data,f,indent=2)
-
-print("Crawler selesai. Total data:",len(data))
+      - name: Commit data
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add data.json
+          git commit -m "auto update data" || echo "no changes"
+          git push
