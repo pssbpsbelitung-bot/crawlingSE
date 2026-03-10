@@ -1,49 +1,119 @@
-import snscrape.modules.twitter as sntwitter
+import requests
 import feedparser
+from bs4 import BeautifulSoup
 import json
 
 data=[]
 
-# TWITTER / X
-for tweet in sntwitter.TwitterSearchScraper("Belitung UMKM digital").get_items():
-
-    data.append({
-        "source":"X",
-        "text":tweet.content,
-        "url":tweet.url
-    })
-
-    if len(data)>15:
-        break
-
-
+# =========================
 # GOOGLE NEWS
-news = feedparser.parse(
-"https://news.google.com/rss/search?q=UMKM+Belitung"
-)
+# =========================
 
-for entry in news.entries[:10]:
+def google_news():
 
-    data.append({
-        "source":"Google News",
-        "text":entry.title,
-        "url":entry.link
-    })
+    url="https://news.google.com/rss/search?q=Belitung+ekonomi+digital+UMKM"
+
+    feed=feedparser.parse(url)
+
+    for item in feed.entries[:20]:
+
+        data.append({
+            "source":"Google News",
+            "title":item.title,
+            "link":item.link
+        })
 
 
+# =========================
 # YOUTUBE
-yt = feedparser.parse(
-"https://www.youtube.com/feeds/videos.xml?search_query=UMKM+Belitung"
-)
+# =========================
 
-for entry in yt.entries[:10]:
+def youtube():
 
-    data.append({
-        "source":"YouTube",
-        "text":entry.title,
-        "url":entry.link
-    })
+    url="https://www.youtube.com/feeds/videos.xml?search_query=Belitung+UMKM+digital"
+
+    feed=feedparser.parse(url)
+
+    for item in feed.entries[:10]:
+
+        data.append({
+            "source":"YouTube",
+            "title":item.title,
+            "link":item.link
+        })
 
 
-with open("data.json","w",encoding="utf8") as f:
-    json.dump(data,f,indent=2,ensure_ascii=False)
+# =========================
+# X / TWITTER (NITTER RSS)
+# =========================
+
+def twitter():
+
+    url="https://nitter.net/search/rss?f=tweets&q=Belitung+UMKM+digital"
+
+    feed=feedparser.parse(url)
+
+    for item in feed.entries[:20]:
+
+        data.append({
+            "source":"X",
+            "title":item.title,
+            "link":item.link
+        })
+
+
+# =========================
+# PORTAL BERITA BABEL
+# =========================
+
+def berita_babel():
+
+    sites=[
+        "https://babelpos.disway.id",
+        "https://bangkapos.com",
+        "https://wowbabel.com"
+    ]
+
+    for site in sites:
+
+        try:
+
+            r=requests.get(site,timeout=10)
+
+            soup=BeautifulSoup(r.text,"html.parser")
+
+            links=soup.find_all("a")
+
+            for l in links[:20]:
+
+                text=l.get_text().lower()
+
+                if "belitung" in text or "umkm" in text or "digital" in text:
+
+                    data.append({
+                        "source":site,
+                        "title":l.get_text().strip(),
+                        "link":l.get("href")
+                    })
+
+        except:
+            pass
+
+
+# =========================
+# JALANKAN SEMUA SCRAPER
+# =========================
+
+google_news()
+youtube()
+twitter()
+berita_babel()
+
+# =========================
+# SIMPAN DATA
+# =========================
+
+with open("data.json","w") as f:
+    json.dump(data,f,indent=2)
+
+print("Crawler selesai. Total data:",len(data))
