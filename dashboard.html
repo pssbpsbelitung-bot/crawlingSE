@@ -15,11 +15,23 @@ background:#eef2f7;
 padding:30px;
 }
 
+h1{
+margin-bottom:20px;
+}
+
 .card{
 background:white;
 padding:20px;
 border-radius:10px;
 margin-bottom:20px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+.chart{
+width:300px !important;
+height:300px !important;
+margin:auto;
 }
 
 table{
@@ -30,11 +42,21 @@ border-collapse:collapse;
 th,td{
 padding:10px;
 border-bottom:1px solid #ddd;
+text-align:left;
 }
 
 th{
 background:#2c7be5;
 color:white;
+}
+
+a{
+color:#2c7be5;
+text-decoration:none;
+}
+
+a:hover{
+text-decoration:underline;
 }
 
 </style>
@@ -46,7 +68,7 @@ color:white;
 <h1>Monitoring Ekonomi Digital Belitung</h1>
 
 <div class="card">
-<canvas id="chart"></canvas>
+<canvas id="chart" class="chart"></canvas>
 </div>
 
 <div class="card">
@@ -82,8 +104,8 @@ tbody.innerHTML+=`
 <tr>
 <td>${i+1}</td>
 <td>${d.source}</td>
-<td>${d.text}</td>
-<td><a href="${d.url}" target="_blank">Buka</a></td>
+<td>${d.title}</td>
+<td><a href="${d.link}" target="_blank">Buka</a></td>
 </tr>
 `
 
@@ -102,6 +124,10 @@ labels:Object.keys(count),
 datasets:[{
 data:Object.values(count)
 }]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false
 }
 })
 
