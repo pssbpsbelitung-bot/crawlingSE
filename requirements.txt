@@ -1,1 +1,4 @@
-
+instaloader
+pandas
+flask
+geopy
